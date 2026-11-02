@@ -1,49 +1,50 @@
-const root = document.body;
-const toggle = document.querySelector('.theme-toggle');
-const savedTheme = localStorage.getItem('portfolio-theme');
-
-if (savedTheme === 'dark') {
-  root.classList.add('dark');
-  toggle.setAttribute('aria-pressed', 'true');
-}
-
-toggle.addEventListener('click', () => {
-  const isDark = root.classList.toggle('dark');
-  toggle.setAttribute('aria-pressed', String(isDark));
-  localStorage.setItem('portfolio-theme', isDark ? 'dark' : 'light');
-});
+const sections = [...document.querySelectorAll('.panel')];
+const navLinks = [...document.querySelectorAll('[data-nav]')];
+const currentSection = document.querySelector('[data-current-section]');
+const menuButton = document.querySelector('.menu-button');
+const mobileNav = document.querySelector('.mobile-nav');
+const sectionVisibility = new Map(sections.map((section) => [section, 0]));
 
 document.querySelectorAll('[data-year]').forEach((node) => {
   node.textContent = new Date().getFullYear();
 });
 
-const observer = new IntersectionObserver(
+const sectionObserver = new IntersectionObserver(
   (entries) => {
     entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        observer.unobserve(entry.target);
-      }
+      sectionVisibility.set(entry.target, entry.isIntersecting ? entry.intersectionRatio : 0);
+    });
+
+    const visible = [...sectionVisibility.entries()]
+      .sort((a, b) => b[1] - a[1])[0];
+
+    if (!visible || visible[1] === 0) return;
+
+    const activeSection = visible[0];
+    const id = activeSection.id;
+    currentSection.textContent = activeSection.dataset.index;
+
+    navLinks.forEach((link) => {
+      const target = link.dataset.nav;
+      const active = target === id || (target === 'work' && id.startsWith('case-'));
+      link.classList.toggle('active', active);
     });
   },
-  { threshold: 0.12 }
+  { threshold: [0.35, 0.55, 0.75] }
 );
 
-document.querySelectorAll('.reveal').forEach((node, index) => {
-  node.style.transitionDelay = `${Math.min(index % 3, 2) * 80}ms`;
-  observer.observe(node);
+sections.forEach((section) => sectionObserver.observe(section));
+
+menuButton.addEventListener('click', () => {
+  const open = mobileNav.classList.toggle('open');
+  menuButton.setAttribute('aria-expanded', String(open));
+  menuButton.textContent = open ? 'CLOSE' : 'MENU';
 });
 
-const copyButton = document.querySelector('.copy-button');
-const emailLink = document.querySelector('[data-email]');
-
-copyButton.addEventListener('click', async () => {
-  const email = emailLink.dataset.email;
-  try {
-    await navigator.clipboard.writeText(email);
-    copyButton.textContent = '已复制 ✓';
-    window.setTimeout(() => { copyButton.textContent = '复制邮箱'; }, 1800);
-  } catch {
-    window.location.href = `mailto:${email}`;
-  }
+mobileNav.querySelectorAll('a').forEach((link) => {
+  link.addEventListener('click', () => {
+    mobileNav.classList.remove('open');
+    menuButton.setAttribute('aria-expanded', 'false');
+    menuButton.textContent = 'MENU';
+  });
 });
