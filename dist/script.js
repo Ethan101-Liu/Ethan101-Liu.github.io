@@ -38,13 +38,13 @@ sections.forEach((section) => sectionObserver.observe(section));
 menuButton.addEventListener('click', () => {
   const open = mobileNav.classList.toggle('open');
   menuButton.setAttribute('aria-expanded', String(open));
-  menuButton.textContent = open ? 'CLOSE' : 'MENU';
+  menuButton.textContent = open ? '关闭' : '菜单';
 });
 
 mobileNav.querySelectorAll('a').forEach((link) => {
   link.addEventListener('click', () => {
     mobileNav.classList.remove('open');
     menuButton.setAttribute('aria-expanded', 'false');
-    menuButton.textContent = 'MENU';
+    menuButton.textContent = '菜单';
   });
 });
