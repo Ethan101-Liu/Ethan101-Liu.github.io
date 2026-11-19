@@ -5,7 +5,7 @@ const navLinks=[...document.querySelectorAll('.sidebar nav a')];
 const panels=[...document.querySelectorAll('.panel')];
 document.querySelectorAll('[data-year]').forEach(node=>{node.textContent=new Date().getFullYear()});
 function enterSite(){boot.classList.add('is-gone');desktop.hidden=false;desktop.classList.add('is-visible');document.body.classList.remove('is-locked');window.setTimeout(()=>boot.setAttribute('hidden',''),520)}
-function showPanel(hash,updateHistory=true){const target=document.querySelector(hash);if(!target?.classList.contains('panel'))return;panels.forEach(panel=>panel.classList.toggle('active',panel===target));navLinks.forEach(link=>link.classList.toggle('active',link.hash===hash));document.querySelector('.content').scrollTop=0;if(updateHistory)history.replaceState(null,'',hash);document.title=`${target.dataset.title} · 刘闽秦`;if(hash==='#writing')window.setTimeout(()=>moveCarousel(articleIndex),30)}
+function showPanel(hash,updateHistory=true){const target=document.querySelector(hash);if(!target?.classList.contains('panel'))return;panels.forEach(panel=>panel.classList.toggle('active',panel===target));navLinks.forEach(link=>link.classList.toggle('active',link.hash===hash));document.querySelector('.content').scrollTop=0;if(updateHistory)history.replaceState(null,'',hash);document.title=`${target.dataset.title} · 刘闽秦`;if(hash==='#writing')window.setTimeout(()=>moveCarousel(articleIndex),30);if(hash==='#projects')window.setTimeout(()=>moveProject(projectIndex),30)}
 enterButton.addEventListener('click',enterSite);
 document.addEventListener('keydown',event=>{if(event.key==='Enter'&&!boot.hidden)enterSite()});
 document.addEventListener('click',event=>{const link=event.target.closest('a[href^="#"]');const nextButton=event.target.closest('[data-next]');if(link&&document.querySelector(link.hash)?.classList.contains('panel')){event.preventDefault();showPanel(link.hash)}if(nextButton)showPanel(`#${nextButton.dataset.next}`)});
@@ -49,3 +49,40 @@ carousel.addEventListener('touchend',event=>{const distance=event.changedTouches
 window.addEventListener('resize',()=>moveCarousel(articleIndex));
 window.addEventListener('hashchange',()=>{if(location.hash==='#writing')window.setTimeout(()=>moveCarousel(articleIndex),30)});
 moveCarousel(0);
+
+const projectCarousel=document.querySelector('.project-carousel');
+const projectWindow=document.querySelector('.project-window');
+const projectTrack=document.querySelector('.project-track');
+const projectCards=[...document.querySelectorAll('.project-card')];
+const projectCurrent=document.querySelector('[data-project-current]');
+const projectDots=document.querySelector('.project-dots');
+let projectIndex=0;
+let projectTouchStart=0;
+
+projectCards.forEach((card,index)=>{
+  const dot=document.createElement('button');
+  dot.type='button';
+  dot.setAttribute('aria-label',`查看第 ${index+1} 个项目`);
+  dot.addEventListener('click',()=>moveProject(index));
+  projectDots.append(dot);
+  card.addEventListener('click',event=>{
+    if(index!==projectIndex){event.preventDefault();moveProject(index)}
+  });
+});
+
+function moveProject(index){
+  projectIndex=(index+projectCards.length)%projectCards.length;
+  const card=projectCards[projectIndex];
+  const offset=projectWindow.clientWidth/2-card.offsetLeft-card.offsetWidth/2;
+  projectTrack.style.transform=`translateX(${offset}px)`;
+  projectCards.forEach((item,i)=>item.classList.toggle('is-current',i===projectIndex));
+  [...projectDots.children].forEach((dot,i)=>dot.classList.toggle('active',i===projectIndex));
+  projectCurrent.textContent=String(projectIndex+1).padStart(2,'0');
+}
+
+projectCarousel.querySelector('.prev').addEventListener('click',()=>moveProject(projectIndex-1));
+projectCarousel.querySelector('.next').addEventListener('click',()=>moveProject(projectIndex+1));
+projectCarousel.addEventListener('touchstart',event=>{projectTouchStart=event.changedTouches[0].clientX},{passive:true});
+projectCarousel.addEventListener('touchend',event=>{const distance=event.changedTouches[0].clientX-projectTouchStart;if(Math.abs(distance)>45)moveProject(projectIndex+(distance<0?1:-1))},{passive:true});
+window.addEventListener('resize',()=>{moveCarousel(articleIndex);moveProject(projectIndex)});
+moveProject(0);
